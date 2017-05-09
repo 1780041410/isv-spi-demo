@@ -13,6 +13,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
 
 public class ApiSignatureUtil {
     private static final String UTF8_CHARSET = "UTF-8";
@@ -85,11 +88,29 @@ public class ApiSignatureUtil {
         String out = null;
         try {
             if(s != null){
-                out = URLEncoder.encode(s, UTF8_CHARSET);
+                out = URLEncoder.encode(s, UTF8_CHARSET)
+                        .replace("+", "%20").replace("*", "%2A").replace("%7E", "~");
             }
         } catch (UnsupportedEncodingException e) {
             out = s;
         }
         return out;
+    }
+
+    public static String httpPost(String apiUrl, String json) {
+        try {
+            HttpClient httpClient = new HttpClient();
+            PostMethod method = new PostMethod(apiUrl);
+            method.setRequestHeader("Content-Type", "application/json");
+            method.setRequestHeader("Connection", "close");
+            method.setRequestEntity(new StringRequestEntity(json,"application/json", "utf-8"));
+            method.releaseConnection();
+            httpClient.getHttpConnectionManager().closeIdleConnections(0);
+            httpClient.executeMethod(method);
+            String responseData = method.getResponseBodyAsString();
+            return responseData;
+        } catch (Exception e) {
+        }
+        return null;
     }
 }
